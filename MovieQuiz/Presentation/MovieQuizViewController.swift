@@ -31,7 +31,7 @@ final class MovieQuizViewController: UIViewController {
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
     
-    // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         questions = getMocData()
@@ -68,8 +68,7 @@ extension MovieQuizViewController {
                                                 message: result.text,
                                                 preferredStyle: .alert)
         
-        let actionButton = UIAlertAction(title: result.buttonText,
-                                         style: .default) { _ in
+        let actionButton = UIAlertAction(title: result.buttonText, style: .default) { _ in
             self.currentQuestionIndex = 0
             self.showNextQuestion()
         }
@@ -112,7 +111,7 @@ extension MovieQuizViewController {
     private func showNextQuestionOrResult() {
         if currentQuestionIndex == questions.count - 1 {
             let resultModel = QuizRezultViewModel(title: "Раунд окончен!",
-                                                  text: "Ваш результат: \(correctAnswers) / \(questions.count) ",
+                                                  text: "Ваш результат: \(correctAnswers)/\(questions.count)",
                                                   buttonText: "Сыграть еще раз")
             show(quiz: resultModel)
         } else {
