@@ -26,6 +26,9 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet weak private var imageView: UIImageView!
     @IBOutlet weak private var counterLabel: UILabel!
     @IBOutlet weak private var questionLabel: UILabel!
+    @IBOutlet weak private var noButton: UIButton!
+    @IBOutlet weak private var yesButton: UIButton!
+    
     
     private var questions: [QuizeQuestion]!
     private var currentQuestionIndex: Int = 0
@@ -34,7 +37,7 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        questions = getMocData()
+        questions = getMockData()
         showNextQuestion()
     }
     
@@ -103,9 +106,16 @@ extension MovieQuizViewController {
             imageView.layer.borderColor = UIColor(named: "YP Red")?.cgColor
         }
         
+        switchEnableForButtons()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResult()
+            self.switchEnableForButtons()
         }
+    }
+    
+    private func switchEnableForButtons() {
+        noButton.isEnabled.toggle()
+        yesButton.isEnabled.toggle()
     }
     
     private func showNextQuestionOrResult() {
@@ -121,7 +131,7 @@ extension MovieQuizViewController {
     }
 
     
-    private func getMocData() -> [QuizeQuestion] {
+    private func getMockData() -> [QuizeQuestion] {
         var quizeQuestions = [QuizeQuestion]()
         
         quizeQuestions.append(QuizeQuestion(image: "The Godfather",
