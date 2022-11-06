@@ -71,7 +71,9 @@ extension MovieQuizViewController {
                                                 message: result.text,
                                                 preferredStyle: .alert)
         
-        let actionButton = UIAlertAction(title: result.buttonText, style: .default) { _ in
+        let actionButton = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
+            guard let self = self else { return }
+            
             self.currentQuestionIndex = 0
             self.showNextQuestion()
         }
@@ -107,7 +109,9 @@ extension MovieQuizViewController {
         }
         
         switchEnableForButtons()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+            
             self.showNextQuestionOrResult()
             self.switchEnableForButtons()
         }
