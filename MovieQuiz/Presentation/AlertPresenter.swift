@@ -11,7 +11,7 @@ import UIKit
 struct AlertPresenter: AlertPresenterProtocol {
     weak var delegat: AlertPresenterDelegat?
     
-    func prepearingDataForDisplay(alertModel: AlertModel) {
+    func prepearingDataAndDisplay(alertModel: AlertModel) {
         let alertController = UIAlertController(
             title: alertModel.title,
             message: alertModel.mesage,

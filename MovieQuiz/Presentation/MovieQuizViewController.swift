@@ -22,6 +22,7 @@ final class MovieQuizViewController: UIViewController {
         questionFactory = QuestionFactory.init(delegat: self)
         alertPresenter = AlertPresenter(delegat: self)
         showNextQuestion()
+        print(NSHomeDirectory())
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -90,7 +91,7 @@ extension MovieQuizViewController {
                         self.correctAnswers = 0
                         self.questionFactory?.requestNextQuestion()
                     }
-        alertPresenter?.prepearingDataForDisplay(alertModel: alertModel)
+        alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
     private func showNextQuestion() {
@@ -119,15 +120,13 @@ extension MovieQuizViewController {
         switchEnableForButtons()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
-            
             self.showNextQuestionOrResult()
             self.switchEnableForButtons()
         }
     }
     
     private func switchEnableForButtons() {
-        noButton.isEnabled.toggle()
-        yesButton.isEnabled.toggle()
+        [noButton, yesButton].forEach { $0.isEnabled.toggle() }
     }
     
     private func showNextQuestionOrResult() {
