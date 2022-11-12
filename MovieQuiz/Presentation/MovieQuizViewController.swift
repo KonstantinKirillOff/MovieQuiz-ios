@@ -1,5 +1,11 @@
 import UIKit
 
+enum ParseError: Error {
+    case yearFailure
+    case rankFailure
+    case imDbRatingFailure
+}
+
 final class MovieQuizViewController: UIViewController {
    
     @IBOutlet weak private var imageView: UIImageView!
@@ -22,7 +28,19 @@ final class MovieQuizViewController: UIViewController {
         questionFactory = QuestionFactory.init(delegat: self)
         alertPresenter = AlertPresenter(delegat: self)
         showNextQuestion()
-        print(NSHomeDirectory())
+        
+        //print(NSHomeDirectory())
+        let documentURLS = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let jsorURL = "top250MoviesIMDB.json"
+        let newUrl = documentURLS.appendingPathComponent(jsorURL)
+        let data = try? Data(contentsOf: newUrl)
+        
+        do {
+            let movie = try JSONDecoder().decode(Movies.self, from: data!)
+            print(movie.items.prefix(5))
+        } catch {
+            print("Filed to parse")
+        }
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
