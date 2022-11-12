@@ -21,15 +21,17 @@ final class MovieQuizViewController: UIViewController {
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizeQuestion?
     private var alertPresenter: AlertPresenterProtocol?
+    private var statisticService: StatisticService!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         questionFactory = QuestionFactory.init(delegat: self)
         alertPresenter = AlertPresenter(delegat: self)
+        statisticService = StatisticServiceImplementation()
         showNextQuestion()
         
-        //print(NSHomeDirectory())
+        //print(NSHomeDirectory()) Не понял, что делать с этим кодом, в итоге оставил пока как есть.
         let documentURLS = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let jsorURL = "top250MoviesIMDB.json"
         let newUrl = documentURLS.appendingPathComponent(jsorURL)
@@ -149,9 +151,20 @@ extension MovieQuizViewController {
     
     private func showNextQuestionOrResult() {
         if currentQuestionIndex == questionAmmount - 1 {
+            statisticService.store(correct: correctAnswers, total: questionAmmount)
+            
+            let bestGame = statisticService.bestGame
+            let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
+           
             let resultModel = QuizRezultViewModel(
                 title: "Раунд окончен!",
-                text: correctAnswers == questionAmmount ? "Поздравляем, вы ответили на 10 из 10!" : "Ваш результат: \(correctAnswers)/\(questionAmmount)",
+                text:
+                """
+                    Ваш результат: \(correctAnswers)/\(questionAmmount)
+                    Количество сыгранных квизов: \(statisticService.gameCount)
+                    Рекорд: \(bestGame.correct)/\(bestGame.total)(\(bestGame.date.dateTimeString))
+                    Средняя точность: \(totalAccuracy)%
+                """,
                 buttonText: "Сыграть еще раз")
             
             show(quiz: resultModel)
