@@ -9,8 +9,8 @@ import Foundation
 import UIKit
 
 struct AlertPresenter: AlertPresenterProtocol {
-    weak var delegat: AlertPresenterDelegat?
-    
+    weak var delegate: AlertPresenterDelegate?
+
     func prepearingDataAndDisplay(alertModel: AlertModel) {
         let alertController = UIAlertController(
             title: alertModel.title,
@@ -23,7 +23,7 @@ struct AlertPresenter: AlertPresenterProtocol {
         }
         
         alertController.addAction(alertAction)
-        delegat?.showAlert(alert: alertController)
+        delegate?.showAlert(alert: alertController)
     }
    
 }

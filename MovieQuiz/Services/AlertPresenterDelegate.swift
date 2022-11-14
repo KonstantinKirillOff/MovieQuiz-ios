@@ -8,6 +8,6 @@
 import Foundation
 import UIKit
 
-protocol AlertPresenterDelegat: AnyObject {
+protocol AlertPresenterDelegate: AnyObject {
     func showAlert(alert: UIAlertController?)
 }

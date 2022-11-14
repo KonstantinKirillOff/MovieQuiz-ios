@@ -17,33 +17,19 @@ final class MovieQuizViewController: UIViewController {
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
     
-    private let questionAmmount = 10
+    private let questionAmount = 10
     private var questionFactory: QuestionFactoryProtocol?
-    private var currentQuestion: QuizeQuestion?
+    private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        questionFactory = QuestionFactory.init(delegat: self)
-        alertPresenter = AlertPresenter(delegat: self)
+        questionFactory = QuestionFactory.init(delegate: self)
+        alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
         showNextQuestion()
-        
-        //print(NSHomeDirectory()) Не понял, что делать с этим кодом, в итоге оставил пока как есть.
-        let documentURLS = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let jsorURL = "top250MoviesIMDB.json"
-        let newUrl = documentURLS.appendingPathComponent(jsorURL)
-        if let data = try? Data(contentsOf: newUrl) {
-            do {
-                let movie = try JSONDecoder().decode(Movies.self, from: data)
-                print(movie.items.prefix(5))
-            } catch {
-                print("Filed to parse")
-            }
-        }
-        
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -69,8 +55,8 @@ final class MovieQuizViewController: UIViewController {
     }
 }
 
-extension MovieQuizViewController: QuestionFactoryDelegat {
-    func didReceiveNextQuestion(question: QuizeQuestion?) {
+extension MovieQuizViewController: QuestionFactoryDelegate {
+    func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else {
             return
         }
@@ -82,7 +68,7 @@ extension MovieQuizViewController: QuestionFactoryDelegat {
     }
 }
 
-extension MovieQuizViewController: AlertPresenterDelegat {
+extension MovieQuizViewController: AlertPresenterDelegate {
     func showAlert(alert: UIAlertController?) {
         guard let alert = alert else {
             return
@@ -100,7 +86,7 @@ extension MovieQuizViewController {
         questionLabel.text = step.question
     }
     
-    private func show(quiz result: QuizRezultViewModel) {
+    private func show(quiz result: QuizResultViewModel) {
         let alertModel = AlertModel(
                     title: result.title,
                     mesage: result.text,
@@ -110,21 +96,22 @@ extension MovieQuizViewController {
                         }
                         self.currentQuestionIndex = 0
                         self.correctAnswers = 0
+                        self.hideBorder()
                         self.questionFactory?.requestNextQuestion()
                     }
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
     private func showNextQuestion() {
-        self.imageView.layer.borderWidth = 0
+        hideBorder()
         questionFactory?.requestNextQuestion()
     }
     
-    private func convert(model: QuizeQuestion) -> QuizStepViewModel {
+    private func convert(model: QuizQuestion) -> QuizStepViewModel {
             QuizStepViewModel(
                 image: UIImage(named: model.image) ?? UIImage(),
                 question: model.textQuestion,
-                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmmount)")
+                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)")
     }
     
     private func showAnswerResult(isCorrect: Bool) {
@@ -146,22 +133,18 @@ extension MovieQuizViewController {
         }
     }
     
-    private func switchEnableForButtons() {
-        [noButton, yesButton].forEach { $0.isEnabled.toggle() }
-    }
-    
     private func showNextQuestionOrResult() {
-        if currentQuestionIndex == questionAmmount - 1 {
-            statisticService.store(correct: correctAnswers, total: questionAmmount)
+        if currentQuestionIndex == questionAmount - 1 {
+            statisticService.store(correct: correctAnswers, total: questionAmount)
             
             let bestGame = statisticService.bestGame
             let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
            
-            let resultModel = QuizRezultViewModel(
+            let resultModel = QuizResultViewModel(
                 title: "Раунд окончен!",
                 text:
                 """
-                    Ваш результат: \(correctAnswers)/\(questionAmmount)
+                    Ваш результат: \(correctAnswers)/\(questionAmount)
                     Количество сыгранных квизов: \(statisticService.gameCount)
                     Рекорд: \(bestGame.correct)/\(bestGame.total)(\(bestGame.date.dateTimeString))
                     Средняя точность: \(totalAccuracy)%
@@ -173,6 +156,14 @@ extension MovieQuizViewController {
             currentQuestionIndex += 1
             showNextQuestion()
         }
+    }
+    
+    private func switchEnableForButtons() {
+        [noButton, yesButton].forEach { $0.isEnabled.toggle() }
+    }
+    
+    private func hideBorder() {
+        self.imageView.layer.borderWidth = 0
     }
 }
 
