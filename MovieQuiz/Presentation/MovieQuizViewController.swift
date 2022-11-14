@@ -35,14 +35,15 @@ final class MovieQuizViewController: UIViewController {
         let documentURLS = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let jsorURL = "top250MoviesIMDB.json"
         let newUrl = documentURLS.appendingPathComponent(jsorURL)
-        let data = try? Data(contentsOf: newUrl)
-        
-        do {
-            let movie = try JSONDecoder().decode(Movies.self, from: data!)
-            print(movie.items.prefix(5))
-        } catch {
-            print("Filed to parse")
+        if let data = try? Data(contentsOf: newUrl) {
+            do {
+                let movie = try JSONDecoder().decode(Movies.self, from: data)
+                print(movie.items.prefix(5))
+            } catch {
+                print("Filed to parse")
+            }
         }
+        
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
