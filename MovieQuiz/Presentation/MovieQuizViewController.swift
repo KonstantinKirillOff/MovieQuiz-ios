@@ -1,43 +1,34 @@
 import UIKit
 
-struct QuizStepViewModel {
-    let image: UIImage
-    let question: String
-    let questionNumber: String
+enum ParseError: Error {
+    case yearFailure
+    case rankFailure
+    case imDbRatingFailure
 }
-
-struct QuizRezultViewModel {
-    let title: String
-    let text: String
-    let buttonText: String
-}
-
-struct QuizeQuestion {
-    let image: String
-    let textQuestion: String
-    let correctAnswer: Bool
-    let rating: Double
-}
-
-
 
 final class MovieQuizViewController: UIViewController {
-    
+   
     @IBOutlet weak private var imageView: UIImageView!
     @IBOutlet weak private var counterLabel: UILabel!
     @IBOutlet weak private var questionLabel: UILabel!
     @IBOutlet weak private var noButton: UIButton!
     @IBOutlet weak private var yesButton: UIButton!
     
-    
-    private var questions: [QuizeQuestion]!
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
+    
+    private let questionAmount = 10
+    private var questionFactory: QuestionFactoryProtocol?
+    private var currentQuestion: QuizQuestion?
+    private var alertPresenter: AlertPresenterProtocol?
+    private var statisticService: StatisticService!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        questions = getMockData()
+        questionFactory = QuestionFactory.init(delegate: self)
+        alertPresenter = AlertPresenter(delegate: self)
+        statisticService = StatisticServiceImplementation()
         showNextQuestion()
     }
     
@@ -46,15 +37,44 @@ final class MovieQuizViewController: UIViewController {
     }
     
     @IBAction private func noButtonClicked() {
-        let isCorrect = questions[currentQuestionIndex].correctAnswer == false
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+        
+        let isCorrect = currentQuestion.correctAnswer == false
         showAnswerResult(isCorrect: isCorrect)
     }
     
     @IBAction private func yesButtonClicked() {
-        let isCorrect = questions[currentQuestionIndex].correctAnswer == true
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+
+        let isCorrect = currentQuestion.correctAnswer == true
         showAnswerResult(isCorrect: isCorrect)
     }
-    
+}
+
+extension MovieQuizViewController: QuestionFactoryDelegate {
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+        currentQuestion = question
+        let quizStepViewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: quizStepViewModel)
+        }
+    }
+}
+
+extension MovieQuizViewController: AlertPresenterDelegate {
+    func showAlert(alert: UIAlertController?) {
+        guard let alert = alert else {
+            return
+        }
+        present(alert, animated: true, completion: nil)
+    }
 }
 
 
@@ -66,33 +86,32 @@ extension MovieQuizViewController {
         questionLabel.text = step.question
     }
     
-    private func show(quiz result: QuizRezultViewModel) {
-        let alertController = UIAlertController(title: result.title,
-                                                message: result.text,
-                                                preferredStyle: .alert)
-        
-        let actionButton = UIAlertAction(title: result.buttonText, style: .default) { _ in
-            self.currentQuestionIndex = 0
-            self.showNextQuestion()
-        }
-        
-        alertController.addAction(actionButton)
-        present(alertController, animated: true, completion: nil)
+    private func show(quiz result: QuizResultViewModel) {
+        let alertModel = AlertModel(
+                    title: result.title,
+                    mesage: result.text,
+                    buttonText: result.buttonText) { [weak self] in
+                        guard let self = self else {
+                            return
+                        }
+                        self.currentQuestionIndex = 0
+                        self.correctAnswers = 0
+                        self.hideBorder()
+                        self.questionFactory?.requestNextQuestion()
+                    }
+        alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
     private func showNextQuestion() {
-        self.imageView.layer.borderWidth = 0
-        
-        let currentQuestion = questions[currentQuestionIndex]
-        let quizeStep = convert(model: currentQuestion)
-        show(quiz: quizeStep)
+        hideBorder()
+        questionFactory?.requestNextQuestion()
     }
     
-    
-    private func convert(model: QuizeQuestion) -> QuizStepViewModel {
-            return QuizStepViewModel(image: UIImage(named: model.image) ?? UIImage(),
-                                     question: model.textQuestion,
-                                     questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)")
+    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+            QuizStepViewModel(
+                image: UIImage(named: model.image) ?? UIImage(),
+                question: model.textQuestion,
+                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)")
     }
     
     private func showAnswerResult(isCorrect: Bool) {
@@ -107,75 +126,44 @@ extension MovieQuizViewController {
         }
         
         switchEnableForButtons()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
             self.showNextQuestionOrResult()
             self.switchEnableForButtons()
         }
     }
     
-    private func switchEnableForButtons() {
-        noButton.isEnabled.toggle()
-        yesButton.isEnabled.toggle()
-    }
-    
     private func showNextQuestionOrResult() {
-        if currentQuestionIndex == questions.count - 1 {
-            let resultModel = QuizRezultViewModel(title: "Раунд окончен!",
-                                                  text: "Ваш результат: \(correctAnswers)/\(questions.count)",
-                                                  buttonText: "Сыграть еще раз")
+        if currentQuestionIndex == questionAmount - 1 {
+            statisticService.store(correct: correctAnswers, total: questionAmount)
+            
+            let bestGame = statisticService.bestGame
+            let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
+           
+            let resultModel = QuizResultViewModel(
+                title: "Раунд окончен!",
+                text:
+                """
+                    Ваш результат: \(correctAnswers)/\(questionAmount)
+                    Количество сыгранных квизов: \(statisticService.gameCount)
+                    Рекорд: \(bestGame.correct)/\(bestGame.total)(\(bestGame.date.dateTimeString))
+                    Средняя точность: \(totalAccuracy)%
+                """,
+                buttonText: "Сыграть еще раз")
+            
             show(quiz: resultModel)
         } else {
             currentQuestionIndex += 1
             showNextQuestion()
         }
     }
-
     
-    private func getMockData() -> [QuizeQuestion] {
-        var quizeQuestions = [QuizeQuestion]()
-        
-        quizeQuestions.append(QuizeQuestion(image: "The Godfather",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: true,
-                                            rating: 9.2))
-        quizeQuestions.append(QuizeQuestion(image: "The Dark Knight",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: true,
-                                            rating: 9))
-        quizeQuestions.append(QuizeQuestion(image: "Kill Bill",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: true,
-                                            rating: 8.1))
-        quizeQuestions.append(QuizeQuestion(image: "The Avengers",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: true,
-                                            rating: 8))
-        quizeQuestions.append(QuizeQuestion(image: "Deadpool",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: true,
-                                            rating: 8))
-        quizeQuestions.append(QuizeQuestion(image: "The Green Knight",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: true,
-                                            rating: 6.6))
-        quizeQuestions.append(QuizeQuestion(image: "Old",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: false,
-                                            rating: 5.8))
-        quizeQuestions.append(QuizeQuestion(image: "The Ice Age Adventures of Buck Wild",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: false,
-                                            rating: 4.3))
-        quizeQuestions.append(QuizeQuestion(image: "Tesla",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: false,
-                                            rating: 5.1))
-        quizeQuestions.append(QuizeQuestion(image: "Vivarium",
-                                            textQuestion: "Рейтинг этого фильма больше чем 6?",
-                                            correctAnswer: false,
-                                            rating: 5.8))
-        
-        return quizeQuestions
+    private func switchEnableForButtons() {
+        [noButton, yesButton].forEach { $0.isEnabled.toggle() }
+    }
+    
+    private func hideBorder() {
+        imageView.layer.borderWidth = 0
     }
 }
 
