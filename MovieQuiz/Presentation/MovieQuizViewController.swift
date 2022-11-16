@@ -163,7 +163,7 @@ extension MovieQuizViewController {
     }
     
     private func hideBorder() {
-        self.imageView.layer.borderWidth = 0
+        imageView.layer.borderWidth = 0
     }
 }
 
