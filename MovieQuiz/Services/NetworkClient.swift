@@ -30,7 +30,7 @@ struct NetworkClient {
                 return
             }
             
-            // Возвращаем данные
+            // Возвращаем данные  
             guard let data = data else { return }
             handler(.success(data))
         }
