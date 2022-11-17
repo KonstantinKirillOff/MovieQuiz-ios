@@ -13,6 +13,7 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet weak private var questionLabel: UILabel!
     @IBOutlet weak private var noButton: UIButton!
     @IBOutlet weak private var yesButton: UIButton!
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
@@ -26,6 +27,9 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+        
         questionFactory = QuestionFactory.init(delegate: self)
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
@@ -102,6 +106,20 @@ extension MovieQuizViewController {
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
+    private func showNetworkError(message: String) {
+        let alertModel = AlertModel(
+                    title: "Что то пошло не так(",
+                    mesage: message,
+                    buttonText: "Попробовать еще раз") { [weak self] in
+                        guard let self = self else {
+                            return
+                        }
+                        self.hideBorder()
+                        self.questionFactory?.requestNextQuestion()
+                    }
+        alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
+    }
+    
     private func showNextQuestion() {
         hideBorder()
         questionFactory?.requestNextQuestion()
@@ -164,6 +182,10 @@ extension MovieQuizViewController {
     
     private func hideBorder() {
         imageView.layer.borderWidth = 0
+    }
+    
+    private func hideLoadingIndicator() {
+        activityIndicator.isHidden = true
     }
 }
 
