@@ -30,7 +30,7 @@ struct NetworkClient {
                 return
             }
             
-            // Возвращаем данные  
+            // Возвращаем данные dfgedgd
             guard let data = data else { return }
             handler(.success(data))
         }
