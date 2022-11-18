@@ -1,11 +1,5 @@
 import UIKit
 
-enum ParseError: Error {
-    case yearFailure
-    case rankFailure
-    case imDbRatingFailure
-}
-
 final class MovieQuizViewController: UIViewController {
    
     @IBOutlet weak private var imageView: UIImageView!
@@ -17,8 +11,7 @@ final class MovieQuizViewController: UIViewController {
     
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
-    
-    private let questionAmount = 10
+    private var questionAmount: Int = 10
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
@@ -30,10 +23,11 @@ final class MovieQuizViewController: UIViewController {
         activityIndicator.isHidden = false
         activityIndicator.startAnimating()
         
-        questionFactory = QuestionFactory.init(delegate: self)
+        questionFactory = QuestionFactory.init(delegate: self, moviesLoader: MovieLoader())
+        questionFactory?.loadData()
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
-        showNextQuestion()
+        //showNextQuestion()
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -53,13 +47,21 @@ final class MovieQuizViewController: UIViewController {
         guard let currentQuestion = currentQuestion else {
             return
         }
-
         let isCorrect = currentQuestion.correctAnswer == true
         showAnswerResult(isCorrect: isCorrect)
     }
 }
 
 extension MovieQuizViewController: QuestionFactoryDelegate {
+    func didLoadDataFromServer() {
+        hideLoadingIndicator()
+        showNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else {
             return
@@ -127,7 +129,7 @@ extension MovieQuizViewController {
     
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
             QuizStepViewModel(
-                image: UIImage(named: model.image) ?? UIImage(),
+                image: UIImage(data: model.image) ?? UIImage(),
                 question: model.textQuestion,
                 questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)")
     }
