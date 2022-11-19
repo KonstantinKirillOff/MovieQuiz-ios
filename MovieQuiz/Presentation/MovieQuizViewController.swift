@@ -20,10 +20,9 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        startActivityIndicator()
-        
         questionFactory = QuestionFactory.init(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
+        startActivityIndicator()
         questionAmount = questionFactory?.questionCount ?? 0
         
         alertPresenter = AlertPresenter(delegate: self)
