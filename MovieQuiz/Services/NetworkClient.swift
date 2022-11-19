@@ -14,7 +14,6 @@ enum NetworkError: Error {
 }
 
 struct NetworkClient {
-
     func fetch(url: URL, handler: @escaping (Result<Data, Error>) -> Void) {
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             // Проверяем, пришла ли ошибка

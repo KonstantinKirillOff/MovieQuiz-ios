@@ -9,8 +9,9 @@ import Foundation
 
 class QuestionFactory: QuestionFactoryProtocol {
     weak var delegate: QuestionFactoryDelegate?
-    var movieCount: Int {
-        movies.count
+    var questionCount: Int {
+        //movies.count
+        12
     }
     
     private let moviesLoader: MoviesLoading
@@ -66,17 +67,23 @@ class QuestionFactory: QuestionFactoryProtocol {
     
     func loadData() {
         moviesLoader.loadMovies { [weak self] result in
-            guard let self = self else { return }
+            guard let self = self else {
+                return
+            }
             switch result {
             case .success(let mostPopularMovies):
                 DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
+                    guard let self = self else {
+                        return
+                    }
                     self.movies = mostPopularMovies.items
                     self.delegate?.didLoadDataFromServer()
                 }
             case .failure(let error):
                 DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
+                    guard let self = self else {
+                        return
+                    }
                     self.delegate?.didFailToLoadData(with: error)
                 }
             }
@@ -84,30 +91,28 @@ class QuestionFactory: QuestionFactoryProtocol {
     }
 
     func requestNextQuestion() {
-       
-        
-        DispatchQueue.global().async { [weak self] in
-            guard let self = self else { return }
-            
-            guard let index = (0..<self.movies.count).randomElement() else {
-                self.delegate?.didReceiveNextQuestion(question: nil)
-                return
-            }
-            guard let movie = self.movies[safe: index] else {
-                self.delegate?.didReceiveNextQuestion(question: nil)
-                return
-            }
-            
-            
+        guard let index = (0..<movies.count).randomElement() else {
+            self.delegate?.didReceiveNextQuestion(question: nil)
+            return
+        }
+        guard let movie = movies[safe: index] else {
+            self.delegate?.didReceiveNextQuestion(question: nil)
+            return
+        }
+
+        DispatchQueue.global().async {
             do {
                 let imageData = try Data(contentsOf: movie.imageURL)
-                let randomRating = Int.random(in: 1...10)
+                let randomRating = Int.random(in: 4...9)
                 let question = QuizQuestion(image: imageData,
                                             textQuestion: "Рейтинг фильма больще \(randomRating)",
                                             correctAnswer: movie.rating > Float(randomRating),
                                             rating: movie.rating)
+                
                 DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
+                    guard let self = self else {
+                        return
+                    }
                     self.delegate?.didReceiveNextQuestion(question: question)
                 }
             } catch {

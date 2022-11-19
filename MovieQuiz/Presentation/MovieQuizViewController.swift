@@ -11,23 +11,23 @@ final class MovieQuizViewController: UIViewController {
     
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
-    private var questionAmount: Int = 10
+    private var questionAmount: Int = 0
+    
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService!
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        activityIndicator.isHidden = false
-        activityIndicator.startAnimating()
+        startActivityIndicator()
         
         questionFactory = QuestionFactory.init(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
+        questionAmount = questionFactory?.questionCount ?? 0
+        
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
-        //showNextQuestion()
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -54,7 +54,7 @@ final class MovieQuizViewController: UIViewController {
 
 extension MovieQuizViewController: QuestionFactoryDelegate {
     func didLoadDataFromServer() {
-        hideLoadingIndicator()
+        stopActivityIndicator()
         showNextQuestion()
     }
     
@@ -68,8 +68,12 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
         }
         currentQuestion = question
         let quizStepViewModel = convert(model: question)
+        
         DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: quizStepViewModel)
+            guard let self = self else {
+                return
+            }
+            self.show(quiz: quizStepViewModel)
         }
     }
 }
@@ -117,7 +121,7 @@ extension MovieQuizViewController {
                             return
                         }
                         self.hideBorder()
-                        self.questionFactory?.requestNextQuestion()
+                        self.questionFactory?.loadData()
                     }
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
@@ -131,7 +135,8 @@ extension MovieQuizViewController {
             QuizStepViewModel(
                 image: UIImage(data: model.image) ?? UIImage(),
                 question: model.textQuestion,
-                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)")
+                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
+            )
     }
     
     private func showAnswerResult(isCorrect: Bool) {
@@ -154,7 +159,7 @@ extension MovieQuizViewController {
     }
     
     private func showNextQuestionOrResult() {
-        if currentQuestionIndex == questionAmount - 1 {
+        if currentQuestionIndex ==  questionAmount - 1 {
             statisticService.store(correct: correctAnswers, total: questionAmount)
             
             let bestGame = statisticService.bestGame
@@ -186,8 +191,14 @@ extension MovieQuizViewController {
         imageView.layer.borderWidth = 0
     }
     
-    private func hideLoadingIndicator() {
+    private func startActivityIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+    
+    private func stopActivityIndicator() {
         activityIndicator.isHidden = true
+        activityIndicator.startAnimating()
     }
 }
 
