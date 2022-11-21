@@ -11,7 +11,7 @@ class QuestionFactory: QuestionFactoryProtocol {
     weak var delegate: QuestionFactoryDelegate?
     var questionCount: Int {
         //movies.count
-        12
+        10
     }
     
     private let moviesLoader: MoviesLoading
