@@ -20,9 +20,11 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureElements()
+        startActivityIndicator()
+        
         questionFactory = QuestionFactory.init(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
-        startActivityIndicator()
         questionAmount = questionFactory?.questionCount ?? 0
         
         alertPresenter = AlertPresenter(delegate: self)
@@ -53,12 +55,16 @@ final class MovieQuizViewController: UIViewController {
 
 extension MovieQuizViewController: QuestionFactoryDelegate {
     func didLoadDataFromServer() {
-        stopActivityIndicator()
         showNextQuestion()
+        stopActivityIndicator()
     }
     
     func didFailToLoadData(with error: Error) {
-        showNetworkError(message: error.localizedDescription)
+        stopActivityIndicator()
+        hideBorder()
+        
+        let textError = getTextError(from: error)
+        showNetworkError(message: textError)
     }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
@@ -66,14 +72,27 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
             return
         }
         currentQuestion = question
-        let quizStepViewModel = convert(model: question)
         
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else {
-                return
+        let quizStepViewModel = convert(model: question)
+        stopActivityIndicator()
+        hideBorder()
+        show(quiz: quizStepViewModel)
+    }
+    
+    private func getTextError(from error: Error) -> String {
+        var textError = ""
+        if let error = error as? NetworkError {
+            switch error {
+            case .serverError(let description):
+                textError = description
+            default:
+                textError = error.localizedDescription
             }
-            self.show(quiz: quizStepViewModel)
+        } else {
+            textError = error.localizedDescription
         }
+        
+        return textError
     }
 }
 
@@ -87,15 +106,15 @@ extension MovieQuizViewController: AlertPresenterDelegate {
 }
 
 
-extension MovieQuizViewController {
+private extension MovieQuizViewController {
     
-    private func show(quiz step: QuizStepViewModel) {
+    func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         counterLabel.text = step.questionNumber
         questionLabel.text = step.question
     }
     
-    private func show(quiz result: QuizResultViewModel) {
+    func show(quiz result: QuizResultViewModel) {
         let alertModel = AlertModel(
                     title: result.title,
                     mesage: result.text,
@@ -111,7 +130,7 @@ extension MovieQuizViewController {
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
-    private func showNetworkError(message: String) {
+    func showNetworkError(message: String) {
         let alertModel = AlertModel(
                     title: "Что то пошло не так(",
                     mesage: message,
@@ -125,12 +144,11 @@ extension MovieQuizViewController {
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
-    private func showNextQuestion() {
-        hideBorder()
+    func showNextQuestion() {
         questionFactory?.requestNextQuestion()
     }
     
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+    func convert(model: QuizQuestion) -> QuizStepViewModel {
             QuizStepViewModel(
                 image: UIImage(data: model.image) ?? UIImage(),
                 question: model.textQuestion,
@@ -138,7 +156,7 @@ extension MovieQuizViewController {
             )
     }
     
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         
@@ -150,15 +168,18 @@ extension MovieQuizViewController {
         }
         
         switchEnableForButtons()
+        startActivityIndicator()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
+            guard let self = self else {
+                return
+            }
             self.showNextQuestionOrResult()
             self.switchEnableForButtons()
         }
     }
     
-    private func showNextQuestionOrResult() {
-        if currentQuestionIndex ==  questionAmount - 1 {
+    func showNextQuestionOrResult() {
+        if currentQuestionIndex == questionAmount - 1 {
             statisticService.store(correct: correctAnswers, total: questionAmount)
             
             let bestGame = statisticService.bestGame
@@ -182,22 +203,25 @@ extension MovieQuizViewController {
         }
     }
     
-    private func switchEnableForButtons() {
+    func switchEnableForButtons() {
         [noButton, yesButton].forEach { $0.isEnabled.toggle() }
     }
     
-    private func hideBorder() {
+    func hideBorder() {
         imageView.layer.borderWidth = 0
     }
     
-    private func startActivityIndicator() {
-        activityIndicator.isHidden = false
+    func configureElements() {
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.color = .white
+    }
+    
+    func startActivityIndicator() {
         activityIndicator.startAnimating()
     }
     
-    private func stopActivityIndicator() {
-        activityIndicator.isHidden = true
-        activityIndicator.startAnimating()
+    func stopActivityIndicator() {
+        activityIndicator.stopAnimating()
     }
 }
 

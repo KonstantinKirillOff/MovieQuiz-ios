@@ -11,6 +11,7 @@ enum NetworkError: Error {
     case codeError
     case parseJsonError
     case filedLoadImage
+    case serverError(String)
 }
 
 struct NetworkClient {

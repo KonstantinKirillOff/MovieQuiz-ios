@@ -66,15 +66,15 @@ class QuestionFactory: QuestionFactoryProtocol {
     }
     
     func loadData() {
-        moviesLoader.loadMovies { result in
+        moviesLoader.loadMovies { [weak self] result in
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else {
                     return
                 }
                 switch result {
                 case .success(let mostPopularMovies):
-                    self.movies = mostPopularMovies.items
-                    self.delegate?.didLoadDataFromServer()
+                        self.movies = mostPopularMovies.items
+                        self.delegate?.didLoadDataFromServer()
                 case .failure(let error):
                     self.delegate?.didFailToLoadData(with: error)
                 }
@@ -92,7 +92,10 @@ class QuestionFactory: QuestionFactoryProtocol {
             return
         }
 
-        DispatchQueue.global().async {
+        DispatchQueue.global().async { [weak self] in
+            guard let self = self else {
+                return
+            }
             do {
                 let imageData = try Data(contentsOf: movie.resizedImageURL)
                 let randomRating = Int.random(in: 4...9)
@@ -108,7 +111,12 @@ class QuestionFactory: QuestionFactoryProtocol {
                     self.delegate?.didReceiveNextQuestion(question: question)
                 }
             } catch {
-                print(NetworkError.filedLoadImage.localizedDescription)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else {
+                        return
+                    }
+                    self.delegate?.didFailToLoadData(with: NetworkError.filedLoadImage)
+                }
             }
         }
     }
