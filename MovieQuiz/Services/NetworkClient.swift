@@ -7,16 +7,16 @@
 
 import Foundation
 
-struct NetworkClient {
+enum NetworkError: Error {
+    case codeError
+    case parseJsonError
+    case filedLoadImage
+    case serverError(String)
+}
 
-    private enum NetworkError: Error {
-        case codeError
-    }
-    
+struct NetworkClient {
     func fetch(url: URL, handler: @escaping (Result<Data, Error>) -> Void) {
-        let request = URLRequest(url: url)
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
             // Проверяем, пришла ли ошибка
             if let error = error {
                 handler(.failure(error))
@@ -30,11 +30,10 @@ struct NetworkClient {
                 return
             }
             
-            // Возвращаем данные dfgedgd
+            // Возвращаем данные
             guard let data = data else { return }
             handler(.success(data))
         }
-        
         task.resume()
     }
 }

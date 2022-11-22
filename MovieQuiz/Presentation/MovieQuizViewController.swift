@@ -1,11 +1,5 @@
 import UIKit
 
-enum ParseError: Error {
-    case yearFailure
-    case rankFailure
-    case imDbRatingFailure
-}
-
 final class MovieQuizViewController: UIViewController {
    
     @IBOutlet weak private var imageView: UIImageView!
@@ -17,23 +11,24 @@ final class MovieQuizViewController: UIViewController {
     
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
+    private var questionAmount: Int = 0
     
-    private let questionAmount = 10
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService!
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        activityIndicator.isHidden = false
-        activityIndicator.startAnimating()
+        configureElements()
+        startActivityIndicator()
         
-        questionFactory = QuestionFactory.init(delegate: self)
+        questionFactory = QuestionFactory(delegate: self, moviesLoader: MovieLoader())
+        questionFactory?.loadData()
+        questionAmount = questionFactory?.questionCount ?? 0
+        
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
-        showNextQuestion()
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -53,22 +48,51 @@ final class MovieQuizViewController: UIViewController {
         guard let currentQuestion = currentQuestion else {
             return
         }
-
         let isCorrect = currentQuestion.correctAnswer == true
         showAnswerResult(isCorrect: isCorrect)
     }
 }
 
 extension MovieQuizViewController: QuestionFactoryDelegate {
+    func didLoadDataFromServer() {
+        showNextQuestion()
+        stopActivityIndicator()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        stopActivityIndicator()
+        hideBorder()
+        
+        let textError = getTextError(from: error)
+        showNetworkError(message: textError)
+    }
+    
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else {
             return
         }
         currentQuestion = question
+        
         let quizStepViewModel = convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: quizStepViewModel)
+        stopActivityIndicator()
+        hideBorder()
+        show(quiz: quizStepViewModel)
+    }
+    
+    private func getTextError(from error: Error) -> String {
+        var textError = ""
+        if let error = error as? NetworkError {
+            switch error {
+            case .serverError(let description):
+                textError = description
+            default:
+                textError = error.localizedDescription
+            }
+        } else {
+            textError = error.localizedDescription
         }
+        
+        return textError
     }
 }
 
@@ -82,15 +106,15 @@ extension MovieQuizViewController: AlertPresenterDelegate {
 }
 
 
-extension MovieQuizViewController {
+private extension MovieQuizViewController {
     
-    private func show(quiz step: QuizStepViewModel) {
+    func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         counterLabel.text = step.questionNumber
         questionLabel.text = step.question
     }
     
-    private func show(quiz result: QuizResultViewModel) {
+    func show(quiz result: QuizResultViewModel) {
         let alertModel = AlertModel(
                     title: result.title,
                     mesage: result.text,
@@ -106,7 +130,7 @@ extension MovieQuizViewController {
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
-    private func showNetworkError(message: String) {
+    func showNetworkError(message: String) {
         let alertModel = AlertModel(
                     title: "Что то пошло не так(",
                     mesage: message,
@@ -115,24 +139,24 @@ extension MovieQuizViewController {
                             return
                         }
                         self.hideBorder()
-                        self.questionFactory?.requestNextQuestion()
+                        self.questionFactory?.loadData()
                     }
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
     
-    private func showNextQuestion() {
-        hideBorder()
+    func showNextQuestion() {
         questionFactory?.requestNextQuestion()
     }
     
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+    func convert(model: QuizQuestion) -> QuizStepViewModel {
             QuizStepViewModel(
-                image: UIImage(named: model.image) ?? UIImage(),
+                image: UIImage(data: model.image) ?? UIImage(),
                 question: model.textQuestion,
-                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)")
+                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
+            )
     }
     
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         
@@ -144,14 +168,17 @@ extension MovieQuizViewController {
         }
         
         switchEnableForButtons()
+        startActivityIndicator()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
+            guard let self = self else {
+                return
+            }
             self.showNextQuestionOrResult()
             self.switchEnableForButtons()
         }
     }
     
-    private func showNextQuestionOrResult() {
+    func showNextQuestionOrResult() {
         if currentQuestionIndex == questionAmount - 1 {
             statisticService.store(correct: correctAnswers, total: questionAmount)
             
@@ -176,16 +203,25 @@ extension MovieQuizViewController {
         }
     }
     
-    private func switchEnableForButtons() {
+    func switchEnableForButtons() {
         [noButton, yesButton].forEach { $0.isEnabled.toggle() }
     }
     
-    private func hideBorder() {
+    func hideBorder() {
         imageView.layer.borderWidth = 0
     }
     
-    private func hideLoadingIndicator() {
-        activityIndicator.isHidden = true
+    func configureElements() {
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.color = .white
+    }
+    
+    func startActivityIndicator() {
+        activityIndicator.startAnimating()
+    }
+    
+    func stopActivityIndicator() {
+        activityIndicator.stopAnimating()
     }
 }
 

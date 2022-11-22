@@ -7,6 +7,13 @@
 
 import Foundation
 
+enum ParseError: Error {
+    case yearFailure
+    case rankFailure
+    case imDbRatingFailure
+    case imageURLFailure
+}
+
 struct Actor: Codable {
     let id: String
     let image: String
