@@ -23,7 +23,7 @@ final class MovieQuizViewController: UIViewController {
         configureElements()
         startActivityIndicator()
         
-        questionFactory = QuestionFactory.init(delegate: self, moviesLoader: MovieLoader())
+        questionFactory = QuestionFactory(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
         questionAmount = questionFactory?.questionCount ?? 0
         
