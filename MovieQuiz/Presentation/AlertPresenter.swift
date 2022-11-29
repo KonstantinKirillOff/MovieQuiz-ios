@@ -16,6 +16,7 @@ struct AlertPresenter: AlertPresenterProtocol {
             title: alertModel.title,
             message: alertModel.mesage,
             preferredStyle: .alert)
+        alertController.view.accessibilityIdentifier = "resultAlert"
         
         let alertAction = UIAlertAction(title: alertModel.buttonText, style: .default) { _ in
             guard let completion = alertModel.completion else { return }

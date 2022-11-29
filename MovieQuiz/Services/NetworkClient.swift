@@ -14,7 +14,11 @@ enum NetworkError: Error {
     case serverError(String)
 }
 
-struct NetworkClient {
+protocol NetworkRouting {
+    func fetch(url: URL, handler: @escaping (Result<Data, Error>) -> Void) 
+}
+
+struct NetworkClient: NetworkRouting {
     func fetch(url: URL, handler: @escaping (Result<Data, Error>) -> Void) {
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             // Проверяем, пришла ли ошибка
