@@ -10,7 +10,6 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     private var alertPresenter: AlertPresenterProtocol?
-    private var statisticService: StatisticService!
     private var presenter: MovieQuizePresenter!
     
     override func viewDidLoad() {
@@ -18,7 +17,6 @@ final class MovieQuizViewController: UIViewController {
         presenter = MovieQuizePresenter(viewController: self)
         
         alertPresenter = AlertPresenter(delegate: self)
-        statisticService = StatisticServiceImplementation()
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -61,7 +59,6 @@ extension MovieQuizViewController {
             guard let self = self else {
                 return
             }
-            self.presenter.statisticService = self.statisticService
             self.presenter.showNextQuestionOrResult()
             self.switchEnableForButtons()
         }

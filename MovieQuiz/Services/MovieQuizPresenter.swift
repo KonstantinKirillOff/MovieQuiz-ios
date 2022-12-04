@@ -32,6 +32,8 @@ final class MovieQuizePresenter {
         
         questionFactory = QuestionFactory(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
+        
+        statisticService = StatisticServiceImplementation()
     }
     
     func noButtonClicked() {

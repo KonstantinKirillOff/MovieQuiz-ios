@@ -7,6 +7,12 @@
 
 import Foundation
 
+enum ParseError: Error {
+    case rankFailure
+    case imDbRatingFailure
+    case imageURLFailure
+}
+
 struct MostPopularMovies: Codable {
     let errorMessage: String
     let items: [MostPopularMovie]
