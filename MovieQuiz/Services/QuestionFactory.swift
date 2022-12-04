@@ -9,10 +9,7 @@ import Foundation
 
 class QuestionFactory: QuestionFactoryProtocol {
     weak var delegate: QuestionFactoryDelegate?
-    var questionCount: Int {
-        //movies.count
-        10
-    }
+    
     private let moviesLoader: MoviesLoading
     private var movies: [MostPopularMovie] = []
     

@@ -9,14 +9,11 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet weak private var yesButton: UIButton!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
-    private var currentQuestionIndex: Int = 0
-    private var correctAnswers: Int = 0
-    private var questionAmount: Int = 0
-    
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService!
+    private let presenter = MovieQuizePresenter()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,7 +22,6 @@ final class MovieQuizViewController: UIViewController {
         
         questionFactory = QuestionFactory(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
-        questionAmount = questionFactory?.questionCount ?? 0
         
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
@@ -63,7 +59,7 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
         stopActivityIndicator()
         hideBorder()
         
-        let textError = getTextError(from: error)
+        let textError = presenter.getTextError(from: error)
         showNetworkError(message: textError)
     }
     
@@ -73,27 +69,12 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
         }
         currentQuestion = question
         
-        let quizStepViewModel = convert(model: question)
+        let quizStepViewModel = presenter.convert(model: question)
         stopActivityIndicator()
         hideBorder()
         show(quiz: quizStepViewModel)
     }
     
-    private func getTextError(from error: Error) -> String {
-        var textError = ""
-        if let error = error as? NetworkError {
-            switch error {
-            case .serverError(let description):
-                textError = description
-            default:
-                textError = error.localizedDescription
-            }
-        } else {
-            textError = error.localizedDescription
-        }
-        
-        return textError
-    }
 }
 
 extension MovieQuizViewController: AlertPresenterDelegate {
@@ -105,9 +86,7 @@ extension MovieQuizViewController: AlertPresenterDelegate {
     }
 }
 
-
 private extension MovieQuizViewController {
-    
     func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         counterLabel.text = step.questionNumber
@@ -122,8 +101,7 @@ private extension MovieQuizViewController {
                         guard let self = self else {
                             return
                         }
-                        self.currentQuestionIndex = 0
-                        self.correctAnswers = 0
+                        self.presenter.resetGameScores()
                         self.hideBorder()
                         self.questionFactory?.requestNextQuestion()
                     }
@@ -148,21 +126,13 @@ private extension MovieQuizViewController {
         questionFactory?.requestNextQuestion()
     }
     
-    func convert(model: QuizQuestion) -> QuizStepViewModel {
-            QuizStepViewModel(
-                image: UIImage(data: model.image) ?? UIImage(),
-                question: model.textQuestion,
-                questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
-            )
-    }
-    
     func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         
         if isCorrect {
             imageView.layer.borderColor = UIColor(named: "YP Green")?.cgColor
-            correctAnswers += 1
+            presenter.addCorrectScore()
         } else {
             imageView.layer.borderColor = UIColor(named: "YP Red")?.cgColor
         }
@@ -179,8 +149,8 @@ private extension MovieQuizViewController {
     }
     
     func showNextQuestionOrResult() {
-        if currentQuestionIndex == questionAmount - 1 {
-            statisticService.store(correct: correctAnswers, total: questionAmount)
+        if presenter.isLastQuestion {
+            statisticService.store(correct: presenter.correctAnswers, total: presenter.questionAmount)
             
             let bestGame = statisticService.bestGame
             let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
@@ -189,7 +159,7 @@ private extension MovieQuizViewController {
                 title: "Раунд окончен!",
                 text:
                 """
-                    Ваш результат: \(correctAnswers)/\(questionAmount)
+                    Ваш результат: \(presenter.correctAnswers)/\(presenter.questionAmount)
                     Количество сыгранных квизов: \(statisticService.gameCount)
                     Рекорд: \(bestGame.correct)/\(bestGame.total)(\(bestGame.date.dateTimeString))
                     Средняя точность: \(totalAccuracy)%
@@ -198,7 +168,7 @@ private extension MovieQuizViewController {
             
             show(quiz: resultModel)
         } else {
-            currentQuestionIndex += 1
+            presenter.switchToNextQuestion()
             showNextQuestion()
         }
     }
