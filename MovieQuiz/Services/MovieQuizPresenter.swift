@@ -9,6 +9,9 @@ import Foundation
 import UIKit
 
 final class MovieQuizePresenter {
+    var currentQuestion: QuizQuestion?
+    weak var viewController: MovieQuizViewController?
+    
     private var currentQuestionIndex: Int = 0
     private(set) var correctAnswers: Int = 0
     
@@ -16,6 +19,23 @@ final class MovieQuizePresenter {
     
     var isLastQuestion: Bool {
         currentQuestionIndex == questionAmount - 1
+    }
+    
+    func noButtonClicked() {
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+        
+        let isCorrect = currentQuestion.correctAnswer == false
+        viewController?.showAnswerResult(isCorrect: isCorrect)
+    }
+    
+    func yesButtonClicked() {
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+        let isCorrect = currentQuestion.correctAnswer == true
+        viewController?.showAnswerResult(isCorrect: isCorrect)
     }
     
     func resetGameScores() {

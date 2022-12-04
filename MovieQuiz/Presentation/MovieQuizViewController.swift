@@ -20,6 +20,8 @@ final class MovieQuizViewController: UIViewController {
         configureElements()
         startActivityIndicator()
         
+        presenter.viewController = self
+        
         questionFactory = QuestionFactory(delegate: self, moviesLoader: MovieLoader())
         questionFactory?.loadData()
         
@@ -32,20 +34,13 @@ final class MovieQuizViewController: UIViewController {
     }
     
     @IBAction private func noButtonClicked() {
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        
-        let isCorrect = currentQuestion.correctAnswer == false
-        showAnswerResult(isCorrect: isCorrect)
+        presenter.currentQuestion = currentQuestion
+        presenter.noButtonClicked()
     }
     
     @IBAction private func yesButtonClicked() {
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        let isCorrect = currentQuestion.correctAnswer == true
-        showAnswerResult(isCorrect: isCorrect)
+        presenter.currentQuestion = currentQuestion
+        presenter.yesButtonClicked()
     }
 }
 
@@ -87,6 +82,28 @@ extension MovieQuizViewController: AlertPresenterDelegate {
 }
 
 private extension MovieQuizViewController {
+    internal func showAnswerResult(isCorrect: Bool) {
+        imageView.layer.masksToBounds = true
+        imageView.layer.borderWidth = 8
+        
+        if isCorrect {
+            imageView.layer.borderColor = UIColor(named: "YP Green")?.cgColor
+            presenter.addCorrectScore()
+        } else {
+            imageView.layer.borderColor = UIColor(named: "YP Red")?.cgColor
+        }
+        
+        switchEnableForButtons()
+        startActivityIndicator()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else {
+                return
+            }
+            self.showNextQuestionOrResult()
+            self.switchEnableForButtons()
+        }
+    }
+    
     func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         counterLabel.text = step.questionNumber
@@ -126,28 +143,7 @@ private extension MovieQuizViewController {
         questionFactory?.requestNextQuestion()
     }
     
-    func showAnswerResult(isCorrect: Bool) {
-        imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 8
-        
-        if isCorrect {
-            imageView.layer.borderColor = UIColor(named: "YP Green")?.cgColor
-            presenter.addCorrectScore()
-        } else {
-            imageView.layer.borderColor = UIColor(named: "YP Red")?.cgColor
-        }
-        
-        switchEnableForButtons()
-        startActivityIndicator()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else {
-                return
-            }
-            self.showNextQuestionOrResult()
-            self.switchEnableForButtons()
-        }
-    }
-    
+
     func showNextQuestionOrResult() {
         if presenter.isLastQuestion {
             statisticService.store(correct: presenter.correctAnswers, total: presenter.questionAmount)
