@@ -14,8 +14,10 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        presenter = MovieQuizePresenter(viewController: self)
+        configureElements()
+        startActivityIndicator()
         
+        presenter = MovieQuizePresenter(viewController: self)
         alertPresenter = AlertPresenter(delegate: self)
     }
     
@@ -24,11 +26,11 @@ final class MovieQuizViewController: UIViewController {
     }
     
     @IBAction private func noButtonClicked() {
-        presenter?.noButtonClicked()
+        presenter.noButtonClicked()
     }
     
     @IBAction private func yesButtonClicked() {
-        presenter?.yesButtonClicked()
+        presenter.yesButtonClicked()
     }
 }
 
@@ -37,34 +39,23 @@ extension MovieQuizViewController: AlertPresenterDelegate {
         guard let alert = alert else {
             return
         }
+        hideBorder()
         present(alert, animated: true, completion: nil)
     }
 }
 
 extension MovieQuizViewController {
     func showAnswerResult(isCorrect: Bool) {
-        imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 8
-        
-        if isCorrect {
-            imageView.layer.borderColor = UIColor(named: "YP Green")?.cgColor
-            presenter.addCorrectScore()
-        } else {
-            imageView.layer.borderColor = UIColor(named: "YP Red")?.cgColor
-        }
-        
+        presenter.didAnswer(isCorrectAnswer: isCorrect)
+        highLightImageBorder(isCorrectAnswer: isCorrect)
         switchEnableForButtons()
         startActivityIndicator()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else {
-                return
-            }
-            self.presenter.showNextQuestionOrResult()
-            self.switchEnableForButtons()
-        }
+        presenter.showAnswerResultWithDelay()
+        switchEnableForButtons()
     }
     
    func show(quiz step: QuizStepViewModel) {
+        hideBorder()
         imageView.image = step.image
         counterLabel.text = step.questionNumber
         questionLabel.text = step.question
@@ -78,9 +69,7 @@ extension MovieQuizViewController {
                         guard let self = self else {
                             return
                         }
-                        self.hideBorder()
                         self.presenter.resetGameScores()
-                        self.presenter.questionFactory?.requestNextQuestion()
                     }
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
@@ -93,9 +82,7 @@ extension MovieQuizViewController {
                         guard let self = self else {
                             return
                         }
-                        self.hideBorder()
                         self.presenter.resetGameScores()
-                        self.presenter.questionFactory?.loadData()
                     }
         alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
     }
@@ -119,6 +106,17 @@ extension MovieQuizViewController {
     
     func hideBorder() {
         imageView.layer.borderWidth = 0
+    }
+    
+    func highLightImageBorder(isCorrectAnswer: Bool) {
+        imageView.layer.masksToBounds = true
+        imageView.layer.borderWidth = 8
+        
+        if isCorrectAnswer {
+            imageView.layer.borderColor = UIColor(named: "YP Green")?.cgColor
+        } else {
+            imageView.layer.borderColor = UIColor(named: "YP Red")?.cgColor
+        }
     }
 }
 
