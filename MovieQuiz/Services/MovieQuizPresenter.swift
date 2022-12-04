@@ -15,13 +15,23 @@ final class MovieQuizePresenter {
     var currentQuestion: QuizQuestion?
     var statisticService: StatisticService!
     
-    private var currentQuestionIndex: Int = 0
-    private var correctAnswers: Int = 0
-    
     let questionAmount: Int = 10
     
     var isLastQuestion: Bool {
         currentQuestionIndex == questionAmount - 1
+    }
+    
+    private var currentQuestionIndex: Int = 0
+    private var correctAnswers: Int = 0
+    
+    init(viewController: MovieQuizViewController) {
+        self.viewController = viewController
+        
+        viewController.configureElements()
+        viewController.startActivityIndicator()
+        
+        questionFactory = QuestionFactory(delegate: self, moviesLoader: MovieLoader())
+        questionFactory?.loadData()
     }
     
     func noButtonClicked() {
@@ -30,14 +40,6 @@ final class MovieQuizePresenter {
     
     func yesButtonClicked() {
         didAnswer(isYes: true)
-    }
-    
-    private func didAnswer(isYes: Bool) {
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        let isCorrect = currentQuestion.correctAnswer == isYes
-        viewController?.showAnswerResult(isCorrect: isCorrect)
     }
     
     func resetGameScores() {
@@ -61,16 +63,6 @@ final class MovieQuizePresenter {
         )
     }
     
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else {
-            return
-        }
-        currentQuestion = question
-        
-        let quizStepViewModel = convert(model: question)
-        viewController?.show(quiz: quizStepViewModel)
-    }
-    
     func showNextQuestionOrResult() {
         if isLastQuestion {
             statisticService.store(correct: correctAnswers, total: questionAmount)
@@ -92,8 +84,12 @@ final class MovieQuizePresenter {
             viewController?.show(quiz: resultModel)
         } else {
             switchToNextQuestion()
-            viewController?.showNextQuestion()
+            showNextQuestion()
         }
+    }
+    
+    func showNextQuestion() {
+        questionFactory?.requestNextQuestion()
     }
     
     func getTextError(from error: Error) -> String {
@@ -111,5 +107,42 @@ final class MovieQuizePresenter {
         
         return textError
     }
+    
+    private func didAnswer(isYes: Bool) {
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+        let isCorrect = currentQuestion.correctAnswer == isYes
+        viewController?.showAnswerResult(isCorrect: isCorrect)
+    }
+}
+
+extension MovieQuizePresenter: QuestionFactoryDelegate {
+    func didLoadDataFromServer() {
+        showNextQuestion()
+        viewController?.stopActivityIndicator()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        viewController?.stopActivityIndicator()
+        viewController?.hideBorder()
+        
+        let textError = getTextError(from: error)
+        viewController?.showNetworkError(message: textError)
+    }
+    
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        viewController?.stopActivityIndicator()
+        viewController?.hideBorder()
+        
+        guard let question = question else {
+            return
+        }
+        currentQuestion = question
+        
+        let quizStepViewModel = convert(model: question)
+        viewController?.show(quiz: quizStepViewModel)
+    }
+    
 }
 
