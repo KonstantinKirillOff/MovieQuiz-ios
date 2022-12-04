@@ -9,11 +9,14 @@ import Foundation
 import UIKit
 
 final class MovieQuizePresenter {
-    var currentQuestion: QuizQuestion?
     weak var viewController: MovieQuizViewController?
+   
+    var questionFactory: QuestionFactoryProtocol?
+    var currentQuestion: QuizQuestion?
+    var statisticService: StatisticService!
     
     private var currentQuestionIndex: Int = 0
-    private(set) var correctAnswers: Int = 0
+    private var correctAnswers: Int = 0
     
     let questionAmount: Int = 10
     
@@ -22,19 +25,18 @@ final class MovieQuizePresenter {
     }
     
     func noButtonClicked() {
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        
-        let isCorrect = currentQuestion.correctAnswer == false
-        viewController?.showAnswerResult(isCorrect: isCorrect)
+        didAnswer(isYes: false)
     }
     
     func yesButtonClicked() {
+        didAnswer(isYes: true)
+    }
+    
+    private func didAnswer(isYes: Bool) {
         guard let currentQuestion = currentQuestion else {
             return
         }
-        let isCorrect = currentQuestion.correctAnswer == true
+        let isCorrect = currentQuestion.correctAnswer == isYes
         viewController?.showAnswerResult(isCorrect: isCorrect)
     }
     
@@ -57,6 +59,41 @@ final class MovieQuizePresenter {
             question: model.textQuestion,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
         )
+    }
+    
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+        currentQuestion = question
+        
+        let quizStepViewModel = convert(model: question)
+        viewController?.show(quiz: quizStepViewModel)
+    }
+    
+    func showNextQuestionOrResult() {
+        if isLastQuestion {
+            statisticService.store(correct: correctAnswers, total: questionAmount)
+            
+            let bestGame = statisticService.bestGame
+            let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
+           
+            let resultModel = QuizResultViewModel(
+                title: "Раунд окончен!",
+                text:
+                """
+                    Ваш результат: \(correctAnswers)/\(questionAmount)
+                    Количество сыгранных квизов: \(statisticService.gameCount)
+                    Рекорд: \(bestGame.correct)/\(bestGame.total)(\(bestGame.date.dateTimeString))
+                    Средняя точность: \(totalAccuracy)%
+                """,
+                buttonText: "Сыграть еще раз")
+            
+            viewController?.show(quiz: resultModel)
+        } else {
+            switchToNextQuestion()
+            viewController?.showNextQuestion()
+        }
     }
     
     func getTextError(from error: Error) -> String {
