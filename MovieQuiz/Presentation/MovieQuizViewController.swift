@@ -1,13 +1,24 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+protocol MovieQuizViewControllerProtocol: AnyObject {
+    func show(quiz step: QuizStepViewModel)
+    func show(quiz result: QuizResultViewModel)
+    
+    func showNetworkError(message: String)
+    func showAnswerResult(isCorrect: Bool)
+    func highLightImageBorder(isCorrectAnswer: Bool)
+    func stopActivityIndicator()
+    
+}
+
+final class MovieQuizViewController: UIViewController, MovieQuizViewControllerProtocol {
    
     @IBOutlet weak private var imageView: UIImageView!
     @IBOutlet weak private var counterLabel: UILabel!
     @IBOutlet weak private var questionLabel: UILabel!
     @IBOutlet weak private var noButton: UIButton!
     @IBOutlet weak private var yesButton: UIButton!
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet weak private var activityIndicator: UIActivityIndicatorView!
     
     private var alertPresenter: AlertPresenterProtocol?
     private var presenter: MovieQuizePresenter!

@@ -5,11 +5,10 @@
 //  Created by Konstantin Kirillov on 04.12.2022.
 //
 
-import Foundation
 import UIKit
 
 final class MovieQuizePresenter {
-    private weak var viewController: MovieQuizViewController?
+    private weak var viewController: MovieQuizViewControllerProtocol?
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private let statisticService: StatisticService!
@@ -22,7 +21,7 @@ final class MovieQuizePresenter {
     private var currentQuestionIndex: Int = 0
     private var correctAnswers: Int = 0
     
-    init(viewController: MovieQuizViewController) {
+    init(viewController: MovieQuizViewControllerProtocol) {
         self.viewController = viewController
         statisticService = StatisticServiceImplementation()
         

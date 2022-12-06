@@ -8,7 +8,6 @@
 import Foundation
 
 enum ParseError: Error {
-    case rankFailure
     case imDbRatingFailure
     case imageURLFailure
 }
@@ -30,7 +29,6 @@ struct MostPopularMovie: Codable {
         guard let newURL = URL(string: imageUrlString) else {
             return imageURL
         }
-        
         return newURL
     }
     
@@ -41,7 +39,7 @@ struct MostPopularMovie: Codable {
         
         let rating = try container.decode(String.self, forKey: .rating)
         guard let rating = Float(rating) else {
-            throw ParseError.rankFailure
+            throw ParseError.imDbRatingFailure
         }
         self.rating = rating
         
