@@ -78,7 +78,7 @@ class MovieLoaderTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
-    func testFilureLoading() throws {
+    func testFailureLoading() throws {
         //Given
         let stubNetworkClient = StubNetworkClient(emulateError: true)
         let loader = MovieLoader(networkClient: stubNetworkClient)

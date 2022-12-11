@@ -21,14 +21,14 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     @IBOutlet weak private var activityIndicator: UIActivityIndicatorView!
     
     private var alertPresenter: AlertPresenterProtocol?
-    private var presenter: MovieQuizePresenter!
+    private var presenter: MovieQuizPresenter!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         configureElements()
         startActivityIndicator()
         
-        presenter = MovieQuizePresenter(viewController: self)
+        presenter = MovieQuizPresenter(viewController: self)
         alertPresenter = AlertPresenter(delegate: self)
     }
     
@@ -75,27 +75,27 @@ extension MovieQuizViewController {
     func show(quiz result: QuizResultViewModel) {
         let alertModel = AlertModel(
                     title: result.title,
-                    mesage: result.text,
+                    message: result.text,
                     buttonText: result.buttonText) { [weak self] in
                         guard let self = self else {
                             return
                         }
                         self.presenter.resetGameScores()
                     }
-        alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
+        alertPresenter?.preparingDataAndDisplay(alertModel: alertModel)
     }
     
     func showNetworkError(message: String) {
         let alertModel = AlertModel(
                     title: "Что то пошло не так(",
-                    mesage: message,
+                    message: message,
                     buttonText: "Попробовать еще раз") { [weak self] in
                         guard let self = self else {
                             return
                         }
                         self.presenter.resetGameScores()
                     }
-        alertPresenter?.prepearingDataAndDisplay(alertModel: alertModel)
+        alertPresenter?.preparingDataAndDisplay(alertModel: alertModel)
     }
     
     func configureElements() {

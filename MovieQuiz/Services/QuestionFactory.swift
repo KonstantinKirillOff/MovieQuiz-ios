@@ -53,7 +53,7 @@ class QuestionFactory: QuestionFactoryProtocol {
                 let imageData = try Data(contentsOf: movie.resizedImageURL)
                 let randomRating = Int.random(in: 4...9)
                 let question = QuizQuestion(image: imageData,
-                                            textQuestion: "Рейтинг фильма больще \(randomRating)",
+                                            textQuestion: "Рейтинг фильма больше \(randomRating)?",
                                             correctAnswer: movie.rating > Float(randomRating),
                                             rating: movie.rating)
                 

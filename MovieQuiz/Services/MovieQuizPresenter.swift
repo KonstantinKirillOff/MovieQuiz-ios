@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class MovieQuizePresenter {
+final class MovieQuizPresenter {
     private weak var viewController: MovieQuizViewControllerProtocol?
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
@@ -124,7 +124,7 @@ final class MovieQuizePresenter {
     }
 }
 
-extension MovieQuizePresenter: QuestionFactoryDelegate {
+extension MovieQuizPresenter: QuestionFactoryDelegate {
     func didLoadDataFromServer() {
         showNextQuestion()
         viewController?.stopActivityIndicator()

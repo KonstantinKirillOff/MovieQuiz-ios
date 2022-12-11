@@ -11,10 +11,10 @@ import UIKit
 struct AlertPresenter: AlertPresenterProtocol {
     weak var delegate: AlertPresenterDelegate?
 
-    func prepearingDataAndDisplay(alertModel: AlertModel) {
+    func preparingDataAndDisplay(alertModel: AlertModel) {
         let alertController = UIAlertController(
             title: alertModel.title,
-            message: alertModel.mesage,
+            message: alertModel.message,
             preferredStyle: .alert)
         alertController.view.accessibilityIdentifier = "resultAlert"
         
