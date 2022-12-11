@@ -23,3 +23,15 @@ MovieQuiz - это приложение с квизами о фильмах из
 ## **Технические особенности**
 - Приложение поддерживает только устройства iPhone с iOS 13, предусмотрен только портретный режим.
 
+
+## **В разработке использовалось: **
+- MVP
+- UserDefaults
+- URLSession 
+- JSON
+- Concurrency
+- UnitTests/UITests
+- SOLID
+- Storyboards
+- Figma
+
