@@ -11,11 +11,12 @@ import UIKit
 struct AlertPresenter: AlertPresenterProtocol {
     weak var delegate: AlertPresenterDelegate?
 
-    func prepearingDataAndDisplay(alertModel: AlertModel) {
+    func preparingDataAndDisplay(alertModel: AlertModel) {
         let alertController = UIAlertController(
             title: alertModel.title,
-            message: alertModel.mesage,
+            message: alertModel.message,
             preferredStyle: .alert)
+        alertController.view.accessibilityIdentifier = "resultAlert"
         
         let alertAction = UIAlertAction(title: alertModel.buttonText, style: .default) { _ in
             guard let completion = alertModel.completion else { return }
